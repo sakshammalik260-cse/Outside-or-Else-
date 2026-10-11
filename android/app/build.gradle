@@ -23,6 +23,36 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            def keystorePropertiesFile = rootProject.file('keystore.properties')
+            if (!keystorePropertiesFile.exists()) {
+                keystorePropertiesFile = file('keystore.properties')
+            }
+            if (keystorePropertiesFile.exists()) {
+                def rawProps = new Properties()
+                keystorePropertiesFile.withInputStream { stream -> rawProps.load(stream) }
+                def props = new Properties()
+                rawProps.each { k, v -> props.put(k.toString().replace('\uFEFF', '').trim(), v) }
+                def kPath = props['storeFile']
+                if (kPath) {
+                    def kf = file(kPath)
+                    if (!kf.exists()) {
+                        kf = rootProject.file(kPath)
+                    }
+                    storeFile = kf
+                }
+                storePassword = props['storePassword']
+                keyAlias = props['keyAlias']
+                keyPassword = props['keyPassword']
+            } else if (System.getenv("ANDROID_KEYSTORE_PATH") != null) {
+                storeFile = file(System.getenv("ANDROID_KEYSTORE_PATH"))
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS")
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         offlineVerify {
             initWith debug
@@ -30,6 +60,9 @@ android {
             matchingFallbacks = ['debug']
         }
         release {
+            if (signingConfigs.release.storeFile != null) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

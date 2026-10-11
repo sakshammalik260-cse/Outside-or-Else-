@@ -73,3 +73,6 @@ native/toolchain/
 .checkpoints/
 artifacts/
 
+
+# Android release APKs
+release/*.apk
